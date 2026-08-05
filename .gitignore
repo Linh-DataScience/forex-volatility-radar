@@ -1,0 +1,8 @@
+data/
+models/
+reports/
+__pycache__/
+*.pyc
+.streamlit/secrets.toml
+.venv/
+.DS_Store

@@ -1,0 +1,12 @@
+pandas
+numpy
+scikit-learn
+xgboost
+vaderSentiment
+yfinance
+plotly
+matplotlib
+streamlit>=1.36
+streamlit-autorefresh
+joblib
+scipy
