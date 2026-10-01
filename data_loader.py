@@ -206,6 +206,17 @@ def to_timeframe(df: pd.DataFrame, target: str = "4h") -> pd.DataFrame:
 # 5. Public entry point
 # ---------------------------------------------------------------------------
 
+# How old the newest cached candle may be before we treat the cache as
+# stale and try a fresh download instead of trusting it blindly. Keyed by
+# interval since a 4h candle is "current" for much longer than a 1h one.
+_MAX_CACHE_AGE = {"1h": pd.Timedelta(hours=2), "4h": pd.Timedelta(hours=8)}
+
+
+def _cache_age(cached: pd.DataFrame) -> pd.Timedelta:
+    now = pd.Timestamp.now(tz="UTC")
+    return now - cached.index[-1]
+
+
 def load_ohlc_with_flag(
     pair: str,
     interval: str = "1h",
@@ -214,19 +225,32 @@ def load_ohlc_with_flag(
     """
     Main function the rest of the project should call.
 
-    Order of attempts: local cache -> live yfinance download -> synthetic
+    Order of attempts: FRESH local cache -> live yfinance download -> STALE
+    local cache (better than nothing if Yahoo is down) -> synthetic
     fallback. Returns (dataframe, is_synthetic) so callers (esp. the
     dashboard) can show a visible warning whenever synthetic data is used —
     never fail silently into fake data.
+
+    The cache is only useful if it's actually recent: without a freshness
+    check, a cache written once (e.g. during development) would be returned
+    forever, since a plain "cache exists" check never expires. That bug
+    shipped in MVP1 — this is the fix.
     """
-    if use_cache:
-        cached = _load_cache(pair, interval)
-        if cached is not None and len(cached) > 100:
+    cached = _load_cache(pair, interval) if use_cache else None
+
+    if cached is not None and len(cached) > 100:
+        max_age = _MAX_CACHE_AGE.get(interval, pd.Timedelta(hours=2))
+        if _cache_age(cached) <= max_age:
             return cached, False
+        print(f"[data_loader] cache for {pair} ({interval}) is stale ({_cache_age(cached)} old) -- refreshing")
 
     live = fetch_ohlc(pair, interval=interval)
     if live is not None and len(live) > 100:
         return live, False
+
+    if cached is not None and len(cached) > 100:
+        print(f"[data_loader] live refresh failed -- falling back to stale cache for {pair} ({interval})")
+        return cached, False
 
     print(f"[data_loader] falling back to SYNTHETIC data for {pair} ({interval})")
     synthetic = generate_synthetic_ohlc(pair, interval=interval)

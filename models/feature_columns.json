@@ -1,0 +1,21 @@
+[
+  "f_true_range",
+  "f_tr_lag1",
+  "f_tr_lag2",
+  "f_atr14",
+  "f_realized_vol10",
+  "f_regime_ratio",
+  "f_abs_last_return",
+  "f_rsi14",
+  "f_weekday",
+  "f_session_asia",
+  "f_session_london",
+  "f_session_overlap",
+  "f_session_ny",
+  "f_pair_AUD/USD",
+  "f_pair_EUR/USD",
+  "f_pair_GBP/USD",
+  "f_pair_USD/JPY",
+  "f_tf_1h",
+  "f_tf_4h"
+]

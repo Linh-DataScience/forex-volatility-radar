@@ -10,3 +10,4 @@ streamlit>=1.36
 streamlit-autorefresh
 joblib
 scipy
+requests
